@@ -26,7 +26,7 @@ export default function ChallengeSetup({
 }: ChallengeSetupProps) {
   return (
     <div className="mb-6 flex flex-col items-center justify-between h-full">
-      <div className="flex flex-col">
+      <div className="flex flex-col w-full">
         <div>
           {" "}
           <h1 className="text-2xl font-semibold">Choose Your Challenge</h1>
@@ -77,18 +77,20 @@ export default function ChallengeSetup({
 
           <div className="mt-6">
             <h3 className="text-lg font-medium mb-2">Your Writing Prompt:</h3>
-            <p className="text-xl italic border-l-4 border-primary pl-4 py-2">
-              {prompt}
-            </p>
+            <p className="text-xl  font-medium  py-2 border-b ">{prompt}</p>
           </div>
         </div>
       </div>
-      <div className="mt-4">
-        <Button onClick={onStart} className="w-full" variant={"default"}>
-          <BookOpen className="mr-2 h-4 w-4" /> Review Vocabulary Words
+      <div className="mt-4 flex justify-between w-full">
+        <Button
+          onClick={generateRandomPrompt}
+          className="w-fit"
+          variant={"outline"}
+        >
+          Generate new prompt
         </Button>
-        <Button onClick={generateRandomPrompt} className="w-full">
-          <BookOpen className="mr-2 h-4 w-4" /> Generate new prompt
+        <Button onClick={onStart} className="w-fit" variant={"default"}>
+          Review Vocabulary Words
         </Button>
       </div>
     </div>

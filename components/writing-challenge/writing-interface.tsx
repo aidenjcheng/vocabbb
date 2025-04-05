@@ -3,14 +3,13 @@
 import type React from "react";
 
 import { useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
-import { Clock, Square } from "lucide-react";
 import WordList from "./word-list";
 import InactivityWarning from "./inactivity-warning";
 import type { WordType } from "./types";
 
+const inactivityTime = 50000;
 interface WritingInterfaceProps {
   timeRemaining: number;
   text: string;
@@ -19,6 +18,7 @@ interface WritingInterfaceProps {
   onStop: () => void;
   onTimeout: () => void;
   initialText: string;
+  selectedTime: number;
 }
 
 export default function WritingInterface({
@@ -29,6 +29,7 @@ export default function WritingInterface({
   onStop,
   onTimeout,
   initialText,
+  selectedTime,
 }: WritingInterfaceProps) {
   const [inactivitySeconds, setInactivitySeconds] = useState<number>(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -50,7 +51,7 @@ export default function WritingInterface({
     const interval = setInterval(() => {
       setInactivitySeconds((prev) => {
         // If we reach 10 seconds, trigger timeout
-        if (prev >= 5000) {
+        if (prev >= inactivityTime) {
           clearInterval(interval);
           onTimeout();
           return 0;
@@ -71,22 +72,9 @@ export default function WritingInterface({
     setInactivitySeconds(0);
   };
 
-  // Format time as MM:SS
-  const formatTime = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-  };
-
   // Calculate progress percentage
   const getProgressPercentage = (): number => {
-    return (timeRemaining / (timeRemaining + inactivitySeconds)) * 100 || 0;
-  };
-
-  const getTimerColor = (): string => {
-    if (timeRemaining <= 30) return "text-red-500";
-    if (timeRemaining <= 60) return "text-orange-500";
-    return "text-primary";
+    return (timeRemaining / (selectedTime * 60)) * 100 || 0;
   };
 
   return (
@@ -95,13 +83,13 @@ export default function WritingInterface({
 
       {/* <InactivityWarning inactivitySeconds={inactivitySeconds} /> */}
 
-      <div className="flex flex-col md:flex-row gap-4 relative">
+      <div className="flex flex-col md:flex-row gap-4 relative mt-2">
         <Textarea
           ref={textareaRef}
           value={text}
           onChange={handleTextChange}
           placeholder="Start writing here..."
-          className="min-h-[400px] flex-grow resize-none !border-non !outline-none !shadow-none"
+          className="min-h-[400px] grow resize-none border-non! outline-hidden! shadow-none!"
           focus={false}
         />
 

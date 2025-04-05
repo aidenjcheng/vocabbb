@@ -11,12 +11,12 @@ import {
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-semibold ring-offset-background !transition-all focus-visible:outline-none focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50  gap-1 hover:scale-[1.01] active:scale-[0.97] scale-100 active:opacity-60",
+  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-all! focus-visible:outline-hidden focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50  gap-1 hover:scale-[1.01] active:scale-[0.97] scale-100 active:opacity-60",
   {
     variants: {
       variant: {
         default:
-          "bg-gradient-to-b from-[rgb(28,_28,_28)] to-[hsl(var(--primary))] text-primary-foreground hover:bg-[rgb(32,_32,_32)] shadow-[inset_0_0_1px_1px_hsla(0,0%,100%,0.08),0_1px_1.5px_0_rgba(0,0,0,0.32)]",
+          "bg-linear-to-b from-[rgb(28,_28,_28)] to-primary text-primary-foreground hover:bg-[rgb(32,_32,_32)] shadow-[inset_0_0_1px_1px_hsla(0,0%,100%,0.08),0_1px_1.5px_0_rgba(0,0,0,0.32)]",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-[inset_0_0_1px_1px_hsla(0,0%,100%,0.08),0_1px_1.5px_0_rgba(0,0,0,0.32),0_0_0_0.5px_#ed4528]",
         outline:
@@ -37,7 +37,7 @@ const buttonVariants = cva(
         icon: "h-7 w-7",
       },
       wide: {
-        true: "relative isolate inline-flex justify-center items-center w-full px-3 py-1.5 border !border-[hsla(217,_91%,_59%,_1)] rounded-md cursor-pointer select-none outline-none transition-all duration-100 bg-[hsla(217,91%,59%,1)] text-primary-foreground text-[0.8125rem] leading-[1.38462] font-medium shadow-[0px_0px_0px_1px_rgb(55,128,246),_0px_1px_1px_0px_rgba(255,255,255,0.07)_inset,_0px_2px_3px_0px_rgba(34,42,53,0.2),_0px_1px_1px_0px_rgba(0,0,0,0.24)] before:absolute before:inset-0 before:z-[-1] before:opacity-100 before:transition-all before:duration-100 before:rounded-inherit before:bg-gradient-to-b before:from-[rgba(255,255,255,0.11)] before:to-transparent !bg-none hover:bg-[hsla(217,91%,59%,0.85)]",
+        true: "relative isolate inline-flex justify-center items-center w-full px-3 py-1.5 border border-[hsla(217,91%,59%,1)]! rounded-md cursor-pointer select-none outline-hidden transition-all duration-100 bg-[hsla(217,91%,59%,1)] text-primary-foreground text-[0.8125rem] leading-[1.38462] font-medium shadow-[0px_0px_0px_1px_rgb(55,128,246),_0px_1px_1px_0px_rgba(255,255,255,0.07)_inset,_0px_2px_3px_0px_rgba(34,42,53,0.2),_0px_1px_1px_0px_rgba(0,0,0,0.24)] before:absolute before:inset-0 before:z-[-1] before:opacity-100 before:transition-all before:duration-100 before:rounded-inherit before:bg-linear-to-b before:from-[rgba(255,255,255,0.11)] before:to-transparent bg-none! hover:bg-[hsla(217,91%,59%,0.85)]",
       },
     },
     defaultVariants: {

@@ -1,4 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Tooltip,
   TooltipContent,
@@ -20,20 +19,23 @@ export default function WordList({ words, text }: WordListProps) {
   };
 
   return (
-    <div className="md:w-64 space-y-4">
-      <div className="flex flex-col gap-2">
+    <div className="md:w-80 space-y-4 bg-muted/80  px-5 py-3 rounded-lg shadow-sm">
+      <div className="flex flex-col gap-2 text-sm">
+        Words checklist
         {words.map(({ word, definition }) => (
           <TooltipProvider key={word}>
-            <Tooltip>
+            <Tooltip delayDuration={0}>
               <TooltipTrigger asChild>
                 <div
-                  className={`flex items-center justify-between p-2 rounded-md ${
-                    isWordUsed(word) ? "bg-green-50" : "bg-muted"
+                  className={`flex items-center justify-between px-2 py-1 rounded-md border text-sm transition-colors ease-out duration-200 ${
+                    isWordUsed(word)
+                      ? "bg-green-50 border-transparent text-green-500"
+                      : "bg-background "
                   }`}
                 >
                   <span>{word}</span>
                   {isWordUsed(word) && (
-                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                    <CheckCircle2 className="h-4 w-4 text-green-500 stroke-[2.5]" />
                   )}
                 </div>
               </TooltipTrigger>

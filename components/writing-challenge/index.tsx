@@ -255,6 +255,7 @@ export default function WritingChallenge() {
           onStop={stopTimer}
           onTimeout={handleTimeout}
           initialText={prompt}
+          selectedTime={selectedTime}
         />
       );
     }
@@ -296,7 +297,7 @@ export default function WritingChallenge() {
 
   return (
     <div
-      className="container mx-auto pt-10 flex flex-col"
+      className="max-w-4xl w-full mx-auto pt-10 flex flex-col"
       style={{ height: "100vh" }}
     >
       {renderContent()}
