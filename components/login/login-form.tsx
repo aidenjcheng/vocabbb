@@ -27,7 +27,7 @@ export default function LoginForm() {
           email,
           redirect: "/workspace",
         },
-        formData
+        formData,
       );
 
       if (result.error) {
@@ -107,13 +107,13 @@ export default function LoginForm() {
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="font-medium border border-input rounded-xl px-4 p-2 h-11 focus:outline-none placeholder:text-muted-foreground  pl-3"
+              className="font-medium border border-input rounded-xl px-4 p-2 h-11 focus:outline-none placeholder:text-muted-foreground  pl-3 !bg- autofill:!bg-red-500"
               required
             />
             <Button
               className="h-11 px-4 rounded-xl hover:scale-[1.02] transition-all"
               type="submit"
-              variant={"contrast"}
+              variant={"default"}
               disabled={loading}
             >
               {loading ? (

@@ -6,6 +6,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Check } from "lucide-react";
 import type { WordType } from "../writing-challenge/types";
+import { ScrollArea } from "../ui/scroll-area";
 
 interface WordListProps {
   words: WordType[];
@@ -20,7 +21,7 @@ export default function WordList({ words, text, open }: WordListProps) {
   };
 
   return (
-    <div
+    <ScrollArea
       className="space-y-4    border-black/10 data-[open=true]:border-l data-[open=true]:md:w-64 data-[open=true]:px-5 data-[open=true]:py-3 w-0 transition-all duration-200 delay-100 box-border overflow-hidden mb-10"
       data-open={open}
     >
@@ -58,6 +59,6 @@ export default function WordList({ words, text, open }: WordListProps) {
           </TooltipProvider>
         ))}
       </div>
-    </div>
+    </ScrollArea>
   );
 }

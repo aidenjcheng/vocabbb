@@ -24,7 +24,13 @@ export default function RootLayout({
       >
         <ThemeProvider>
           {children}
-          <Toaster />
+          <Toaster
+            toastOptions={{
+              style: {
+                height: "40px",
+              },
+            }}
+          />
         </ThemeProvider>
       </body>
     </html>

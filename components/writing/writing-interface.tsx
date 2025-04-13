@@ -17,8 +17,9 @@ import { Button } from "../ui/button";
 import { Copy, DownloadIcon, SidebarIcon } from "lucide-react";
 import { toast } from "sonner";
 import { updateWritingSession } from "@/components/writing/actions";
-import { redirect } from "next/navigation";
 import debounce from "lodash/debounce";
+import InactivityWarning from "./inactivity-warning";
+import WritingCompleteDialog from "./writing-complete-dialog";
 
 type FontStyle = "sans" | "serif" | "mono";
 interface WritingInterfaceProps {
@@ -43,6 +44,10 @@ export default function WritingInterface({
   const [currentText, setCurrentText] = useState(text);
   const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
   const INACTIVITY_TIMEOUT = 10000; // 10 seconds in milliseconds
+  // Track inactivity seconds for the warning display
+  const [inactivitySeconds, setInactivitySeconds] = useState(0);
+  // If session already has text, it means it was stopped previously
+  const [isStopped, setIsStopped] = useState(text !== initialText);
 
   const debouncedFn = useRef(
     debounce(async (text: string) => {
@@ -55,7 +60,8 @@ export default function WritingInterface({
     debouncedFn.cancel();
     // Ensure the final text is saved
     await updateWritingSession(sessionId, { text: currentText });
-    redirect(`/writing/${sessionId}?stopped=true`);
+    // Instead of redirecting, set state to show dialog
+    setIsStopped(true);
   }, [sessionId, currentText, debouncedFn]);
 
   // Reset inactivity timer whenever user types
@@ -63,17 +69,12 @@ export default function WritingInterface({
     if (inactivityTimerRef.current) {
       clearTimeout(inactivityTimerRef.current);
     }
+    // Reset the inactivity seconds counter when user interacts
+    setInactivitySeconds(0);
     inactivityTimerRef.current = setTimeout(handleTimeout, INACTIVITY_TIMEOUT);
   }, [handleTimeout]);
 
-  // Cleanup timer on unmount
-  useEffect(() => {
-    return () => {
-      if (inactivityTimerRef.current) {
-        clearTimeout(inactivityTimerRef.current);
-      }
-    };
-  }, []);
+  // Cleanup is now handled in the inactivity timer effect
 
   // Timer effect
   useEffect(() => {
@@ -89,6 +90,23 @@ export default function WritingInterface({
     return () => clearInterval(timer);
   }, [timeRemaining, handleTimeout]);
 
+  // Helper function to get cookie value
+  const getCookie = (name: string): string | null => {
+    if (typeof document === "undefined") return null;
+    const match = document.cookie.match(
+      new RegExp("(^| )" + name + "=([^;]+)"),
+    );
+    return match ? match[2] : null;
+  };
+
+  // Read sidebar state from cookie on mount
+  useEffect(() => {
+    const sidebarCookie = getCookie("sidebarOpen");
+    if (sidebarCookie === "true") {
+      setOpen(true);
+    }
+  }, []);
+
   // Focus textarea and place cursor at the end when component mounts
   useEffect(() => {
     if (textareaRef.current) {
@@ -98,19 +116,54 @@ export default function WritingInterface({
         initialText.length,
       );
     }
-    // Start initial inactivity timer
-    resetInactivityTimer();
-  }, [initialText, resetInactivityTimer]);
+  }, [initialText]);
+
+  // Separate effect for inactivity timer
+  useEffect(() => {
+    // Only start the inactivity timer if the session isn't already stopped
+    if (!isStopped) {
+      resetInactivityTimer();
+    }
+
+    // Cleanup on unmount
+    return () => {
+      if (inactivityTimerRef.current) {
+        clearTimeout(inactivityTimerRef.current);
+      }
+    };
+  }, [resetInactivityTimer, isStopped]);
+
+  // Effect to increment inactivity seconds
+  useEffect(() => {
+    if (isStopped) return;
+
+    const inactivityInterval = setInterval(() => {
+      setInactivitySeconds((prev) => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(inactivityInterval);
+  }, [isStopped]);
 
   // Use inline function to fix the unknown dependencies warning
   const handleTextChange = useCallback(
     async (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       const newText = e.target.value;
+      const selectionStart = e.target.selectionStart;
+      const selectionEnd = e.target.selectionEnd;
+
       setCurrentText(newText);
       resetInactivityTimer();
       debouncedFn(newText);
+
+      // Preserve cursor position after React re-renders
+      requestAnimationFrame(() => {
+        if (textareaRef.current) {
+          textareaRef.current.selectionStart = selectionStart;
+          textareaRef.current.selectionEnd = selectionEnd;
+        }
+      });
     },
-    [resetInactivityTimer, debouncedFn],
+    [resetInactivityTimer, debouncedFn, textareaRef],
   );
 
   const getFontClass = (style: string) => {
@@ -140,6 +193,8 @@ export default function WritingInterface({
     toast.success("File downloaded successfully");
   };
 
+  // These functions are now handled in the WritingCompleteDialog component
+
   const wordCount = currentText
     .trim()
     .split(/\s+/)
@@ -147,12 +202,15 @@ export default function WritingInterface({
   const charCount = currentText.length;
 
   return (
-    <div className="flex flex-col h-full justify-between pb-3 box-border">
+    <div className="flex flex-col h-screen justify-between pb-3 box-border">
+      {!isStopped && (
+        <InactivityWarning inactivitySeconds={inactivitySeconds} />
+      )}
       <div
-        className="flex flex-col md:flex-row gap-4 relative mt-2  mx-auto w-full h-full data-[open=true]:gap-2  "
+        className="flex flex-col md:flex-row gap-4 relative mt-2  mx-auto w-full h-[90%] data-[open=true]:gap-2 flex-1"
         data-open={open}
       >
-        <div className=" ml-20 w-full">
+        <div className="ml-20 w-full">
           <div className="flex flex-col grow">
             <Textarea
               ref={textareaRef}
@@ -161,13 +219,14 @@ export default function WritingInterface({
               placeholder="Start writing here..."
               className={`min-h-[400px] grow resize-none border-none outline-none shadow-none! ${getFontClass(fontStyle)} w-full transition-all duration-200 delay-100 ease-out`}
               focus={false}
+              disabled={isStopped}
             />
           </div>
         </div>
         <WordList words={requiredWords} text={currentText} open={open} />
       </div>
 
-      <div className="px-4 flex items-center justify-between">
+      <div className="px-4 flex items-center justify-between flex-[0]">
         <div className="flex items-center gap-2">
           <NumberFlowGroup>
             <div
@@ -215,6 +274,7 @@ export default function WritingInterface({
           <Select
             value={fontStyle}
             onValueChange={(value) => setFontStyle(value as FontStyle)}
+            disabled={isStopped}
           >
             <SelectTrigger className="w-fit h-5 rounded-sm px-1 border-none shadow-none text-xs text-muted-foreground">
               <SelectValue placeholder="Font style" />
@@ -257,13 +317,25 @@ export default function WritingInterface({
             size={"icon"}
             className="hover:text-foreground text-muted-foreground size-5 p-0.5 rounded-sm"
             onClick={() => {
-              setOpen(!open);
+              const newState = !open;
+              setOpen(newState);
+              // Save to cookie
+              document.cookie = `sidebarOpen=${newState ? "true" : "false"}; path=/; max-age=31536000; SameSite=Strict`;
             }}
+            disabled={isStopped}
           >
             <SidebarIcon className="size-4" />
           </Button>
         </div>
       </div>
+
+      {/* Stopped Writing Dialog */}
+      <WritingCompleteDialog
+        open={isStopped}
+        onOpenChange={setIsStopped}
+        text={currentText}
+        sessionId={sessionId}
+      />
     </div>
   );
 }

@@ -1,5 +1,4 @@
 import WritingInterface from "@/components/writing/writing-interface";
-import StoppedWritingScreen from "@/components/writing/stopped-writing-screen";
 import { getWritingSession } from "@/components/writing/actions";
 
 export default async function WritingPage({
@@ -11,17 +10,15 @@ export default async function WritingPage({
   const session = await getWritingSession(id);
   const selectedTime = parseInt(session.selected_time);
 
-  if (session.text) {
-    return <StoppedWritingScreen text={session.text} sessionId={id} />;
-  }
-
+  // We now use WritingInterface for both active and stopped sessions
+  // The component itself will handle showing the dialog if needed
   return (
     <WritingInterface
       timeRemaining={selectedTime * 60}
-      text={session.prompt}
+      text={session.text || session.prompt}
       requiredWords={session.required_words}
       sessionId={id}
-      initialText={session.prompt}
+      initialText={session.text || session.prompt}
     />
   );
 }

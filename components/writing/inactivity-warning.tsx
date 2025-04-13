@@ -17,7 +17,7 @@ export default function InactivityWarning({
   return (
     <div>
       <div
-        className="fixed inset-0 bg-red-500/75 pointer-events-none z-30 transition-opacity duration-100 backdrop-blur-[4px]"
+        className="fixed inset-0  bg-red-500/30 pointer-events-none z-30 transition-opacity duration-[1s] backdrop-blur-[6px]"
         style={{
           opacity: getInactivityWarningOpacity(),
         }}

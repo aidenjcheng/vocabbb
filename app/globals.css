@@ -663,3 +663,11 @@ input::-webkit-inner-spin-button {
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-ring: var(--sidebar-ring);
 }
+
+input:-internal-autofill-selected {
+    background-color: transparent !important;
+}
+
+input:-webkit-autofill {
+    background-color: transparent !important;
+}
