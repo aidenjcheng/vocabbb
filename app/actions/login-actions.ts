@@ -202,7 +202,7 @@ export const signInWithGoogle = async () => {
     options: {
       redirectTo,
       queryParams: {
-        redirect_to: "/workspace",
+        redirect_to: "/start",
       },
     },
   });
