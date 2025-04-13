@@ -2,17 +2,17 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import type { WordWithExampleType } from "./types";
+import type { WordWithExampleType } from "../writing-challenge/types";
 
 interface WordReviewProps {
   words: WordWithExampleType[];
-  onStartWriting: () => void;
+  onStartWritingAction: () => void;
   onBackAction: () => void;
 }
 
 export default function WordReview({
   words,
-  onStartWriting,
+  onStartWritingAction,
   onBackAction,
 }: WordReviewProps) {
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
@@ -89,7 +89,7 @@ export default function WordReview({
         >
           <ChevronLeft className="mr-2 h-4 w-4" /> Back
         </Button>
-        <Button onClick={onStartWriting} className="flex-1 sm:flex-none">
+        <Button onClick={onStartWritingAction} className="flex-1 sm:flex-none">
           Start Writing
         </Button>
       </div>

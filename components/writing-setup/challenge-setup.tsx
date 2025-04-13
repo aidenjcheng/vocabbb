@@ -2,8 +2,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { BookOpen } from "lucide-react";
-import type { TimerOption } from "./types";
+import type { TimerOption } from "../writing-challenge/types";
 
 interface ChallengeSetupProps {
   selectedTime: TimerOption;
@@ -28,7 +27,6 @@ export default function ChallengeSetup({
     <div className="mb-6 flex flex-col items-center justify-between h-full">
       <div className="flex flex-col w-full">
         <div>
-          {" "}
           <h1 className="text-2xl font-semibold">Choose Your Challenge</h1>
           <p className="text-gray-500">
             Select a time limit for your writing challenge
@@ -45,7 +43,6 @@ export default function ChallengeSetup({
               } else {
                 onTimeChange("custom" as TimerOption);
               }
-              console.log(typeof value);
             }}
           >
             <TabsList className="grid grid-cols-3 md:grid-cols-6 mb-4">
@@ -77,7 +74,7 @@ export default function ChallengeSetup({
 
           <div className="mt-6">
             <h3 className="text-lg font-medium mb-2">Your Writing Prompt:</h3>
-            <p className="text-xl  font-medium  py-2 border-b ">{prompt}</p>
+            <p className="text-xl font-medium py-2 border-b">{prompt}</p>
           </div>
         </div>
       </div>
@@ -85,11 +82,11 @@ export default function ChallengeSetup({
         <Button
           onClick={generateRandomPrompt}
           className="w-fit"
-          variant={"outline"}
+          variant="outline"
         >
           Generate new prompt
         </Button>
-        <Button onClick={onStart} className="w-fit" variant={"default"}>
+        <Button onClick={onStart} className="w-fit" variant="default">
           Review Vocabulary Words
         </Button>
       </div>

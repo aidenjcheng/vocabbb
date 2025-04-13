@@ -1,31 +1,25 @@
 "use client";
-
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle } from "lucide-react";
-import type { AnalysisResultType, WordType } from "./types";
+import type { AnalysisResultType, WordType } from "../writing-challenge/types";
+import { redirect } from "next/navigation";
 
 interface AnalysisResultsProps {
   text: string;
   analysisResult: AnalysisResultType | null;
   requiredWords: WordType[];
-  onNewChallenge: () => void;
 }
 
 export default function AnalysisResults({
   text,
   analysisResult,
   requiredWords,
-  onNewChallenge,
 }: AnalysisResultsProps) {
+  const handleNewChallenge = () => {
+    redirect("/");
+  };
+
   return (
     <div>
       {analysisResult ? (
@@ -111,7 +105,7 @@ export default function AnalysisResults({
           <p>Analyzing your writing...</p>
         </div>
       )}
-      <Button onClick={onNewChallenge} className="w-full">
+      <Button onClick={handleNewChallenge} className="w-full">
         Start New Challenge
       </Button>
     </div>
