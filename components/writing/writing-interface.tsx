@@ -17,7 +17,9 @@ interface WritingInterfaceProps {
   initialPrompt?: string;
   initialTimer?: number;
 }
+//hi
 
+//awesome
 export default function WritingInterface({
   // requiredWords,
   initialPrompt = "Write about anything!",
