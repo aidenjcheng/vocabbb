@@ -2,160 +2,101 @@
 
 import type React from "react";
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Textarea } from "@/components/ui/textarea";
 import NumberFlow, { NumberFlowGroup } from "@number-flow/react";
-import WordList from "./word-list";
-import type { WordType } from "../writing-challenge/types";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Button } from "../ui/button";
-import { Copy, DownloadIcon, SidebarIcon } from "lucide-react";
+// import WordList from "./word-list";
 import { toast } from "sonner";
-import { updateWritingSession } from "@/components/writing/actions";
-import debounce from "lodash/debounce";
 import InactivityWarning from "./inactivity-warning";
 import WritingCompleteDialog from "./writing-complete-dialog";
+import PromptPopover from "./prompt-popover";
+import WritingToolbar from "./writing-toolbar";
+import WritingArea from "./writing-area";
 
 type FontStyle = "sans" | "serif" | "mono";
 interface WritingInterfaceProps {
-  timeRemaining: number;
-  text: string;
-  requiredWords: WordType[];
-  sessionId: string;
-  initialText: string;
+  // requiredWords: WordType[];
+  initialPrompt?: string;
+  initialTimer?: number;
 }
 
 export default function WritingInterface({
-  timeRemaining: initialTimeRemaining,
-  text,
-  requiredWords,
-  sessionId,
-  initialText,
+  // requiredWords,
+  initialPrompt = "Write about anything!",
+  initialTimer = 300,
 }: WritingInterfaceProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [fontStyle, setFontStyle] = useState<FontStyle>("sans");
-  const [open, setOpen] = useState<boolean>(false);
-  const [timeRemaining, setTimeRemaining] = useState(initialTimeRemaining);
-  const [currentText, setCurrentText] = useState(text);
+  const [timeRemaining, setTimeRemaining] = useState(initialTimer);
+  const [currentText, setCurrentText] = useState("");
+  const [prompt, setPrompt] = useState(initialPrompt);
   const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const INACTIVITY_TIMEOUT = 10000; // 10 seconds in milliseconds
-  // Track inactivity seconds for the warning display
+  const INACTIVITY_TIMEOUT = 10000;
   const [inactivitySeconds, setInactivitySeconds] = useState(0);
-  // If session already has text, it means it was stopped previously
-  const [isStopped, setIsStopped] = useState(text !== initialText);
+  const [isStopped, setIsStopped] = useState(false);
+  const timerOptions = [60, 120, 300, 600, 900, 1800];
+  const [customTimer, setCustomTimer] = useState(0);
+  const [inactivityTimeoutEnabled, setInactivityTimeoutEnabled] =
+    useState(true);
+  const [hasStartedTyping, setHasStartedTyping] = useState(false);
+  const [timerPaused, setTimerPaused] = useState(true);
 
-  const debouncedFn = useRef(
-    debounce(async (text: string) => {
-      await updateWritingSession(sessionId, { text });
-    }, 500),
-  ).current;
-
-  const handleTimeout = useCallback(async () => {
-    // Clear any pending debounced updates
-    debouncedFn.cancel();
-    // Ensure the final text is saved
-    await updateWritingSession(sessionId, { text: currentText });
-    // Instead of redirecting, set state to show dialog
+  const handleTimeout = useCallback(() => {
     setIsStopped(true);
-  }, [sessionId, currentText, debouncedFn]);
+  }, []);
 
-  // Reset inactivity timer whenever user types
   const resetInactivityTimer = useCallback(() => {
     if (inactivityTimerRef.current) {
       clearTimeout(inactivityTimerRef.current);
     }
-    // Reset the inactivity seconds counter when user interacts
     setInactivitySeconds(0);
     inactivityTimerRef.current = setTimeout(handleTimeout, INACTIVITY_TIMEOUT);
   }, [handleTimeout]);
 
-  // Cleanup is now handled in the inactivity timer effect
-
-  // Timer effect
   useEffect(() => {
-    if (timeRemaining <= 0) {
-      handleTimeout();
-      return;
-    }
-
+    if (timeRemaining <= 0 || timerPaused) return;
     const timer = setInterval(() => {
       setTimeRemaining((prev) => Math.max(0, prev - 1));
     }, 1000);
-
     return () => clearInterval(timer);
-  }, [timeRemaining, handleTimeout]);
+  }, [timeRemaining, timerPaused]);
 
-  // Helper function to get cookie value
-  const getCookie = (name: string): string | null => {
-    if (typeof document === "undefined") return null;
-    const match = document.cookie.match(
-      new RegExp("(^| )" + name + "=([^;]+)"),
-    );
-    return match ? match[2] : null;
-  };
-
-  // Read sidebar state from cookie on mount
   useEffect(() => {
-    const sidebarCookie = getCookie("sidebarOpen");
-    if (sidebarCookie === "true") {
-      setOpen(true);
-    }
-  }, []);
-
-  // Focus textarea and place cursor at the end when component mounts
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.focus();
-      textareaRef.current.setSelectionRange(
-        initialText.length,
-        initialText.length,
-      );
-    }
-  }, [initialText]);
-
-  // Separate effect for inactivity timer
-  useEffect(() => {
-    // Only start the inactivity timer if the session isn't already stopped
+    if (!inactivityTimeoutEnabled || !hasStartedTyping) return;
     if (!isStopped) {
       resetInactivityTimer();
     }
-
-    // Cleanup on unmount
     return () => {
       if (inactivityTimerRef.current) {
         clearTimeout(inactivityTimerRef.current);
       }
     };
-  }, [resetInactivityTimer, isStopped]);
+  }, [
+    resetInactivityTimer,
+    isStopped,
+    inactivityTimeoutEnabled,
+    hasStartedTyping,
+  ]);
 
-  // Effect to increment inactivity seconds
   useEffect(() => {
-    if (isStopped) return;
-
+    if (isStopped || !inactivityTimeoutEnabled || !hasStartedTyping) return;
     const inactivityInterval = setInterval(() => {
       setInactivitySeconds((prev) => prev + 1);
     }, 1000);
-
     return () => clearInterval(inactivityInterval);
-  }, [isStopped]);
+  }, [isStopped, inactivityTimeoutEnabled, hasStartedTyping]);
 
-  // Use inline function to fix the unknown dependencies warning
   const handleTextChange = useCallback(
-    async (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       const newText = e.target.value;
       const selectionStart = e.target.selectionStart;
       const selectionEnd = e.target.selectionEnd;
-
       setCurrentText(newText);
-      resetInactivityTimer();
-      debouncedFn(newText);
-
-      // Preserve cursor position after React re-renders
+      if (!hasStartedTyping && newText.trim().length > 0) {
+        setHasStartedTyping(true);
+        setTimerPaused(false);
+      }
+      if (inactivityTimeoutEnabled && hasStartedTyping) {
+        resetInactivityTimer();
+      }
       requestAnimationFrame(() => {
         if (textareaRef.current) {
           textareaRef.current.selectionStart = selectionStart;
@@ -163,19 +104,13 @@ export default function WritingInterface({
         }
       });
     },
-    [resetInactivityTimer, debouncedFn, textareaRef],
+    [
+      resetInactivityTimer,
+      textareaRef,
+      inactivityTimeoutEnabled,
+      hasStartedTyping,
+    ]
   );
-
-  const getFontClass = (style: string) => {
-    switch (style) {
-      case "serif":
-        return "font-serif";
-      case "mono":
-        return "font-mono";
-      default:
-        return "";
-    }
-  };
 
   const handleCopy = () => {
     navigator.clipboard.writeText(currentText);
@@ -193,148 +128,113 @@ export default function WritingInterface({
     toast.success("File downloaded successfully");
   };
 
-  // These functions are now handled in the WritingCompleteDialog component
-
   const wordCount = currentText
     .trim()
     .split(/\s+/)
     .filter((word: string) => word.length > 0).length;
   const charCount = currentText.length;
 
+  const handleTimerClick = () => {
+    if (timeRemaining > 0) {
+      setTimerPaused((prev) => !prev);
+    }
+  };
+
+  const timerDisplay = (
+    <NumberFlowGroup>
+      <button
+        type="button"
+        onClick={handleTimerClick}
+        className={`text-xs flex items-baseline group text-muted-foreground w-fit select-none px-1 rounded transition-colors duration-200 ${
+          timerPaused ? "bg-accent" : "hover:bg-accent hover:text-foreground"
+        }`}
+        style={{ fontVariantNumeric: "tabular-nums" } as React.CSSProperties}
+        aria-label={timerPaused ? "Resume timer" : "Pause timer"}
+      >
+        {timeRemaining >= 3600 && (
+          <NumberFlow
+            trend={-1}
+            value={Math.floor(timeRemaining / 3600)}
+            format={{ minimumIntegerDigits: 2 }}
+            className="transition-colors duration-200 ease-out"
+          />
+        )}
+        {timeRemaining >= 3600 && (
+          <NumberFlow
+            prefix=":"
+            trend={-1}
+            value={Math.floor((timeRemaining % 3600) / 60)}
+            digits={{ 1: { max: 5 } }}
+            format={{ minimumIntegerDigits: 2 }}
+            className="transition-colors duration-200 ease-out"
+          />
+        )}
+        {timeRemaining < 3600 && (
+          <NumberFlow
+            trend={-1}
+            value={Math.floor(timeRemaining / 60)}
+            format={{ minimumIntegerDigits: 2 }}
+            className="transition-colors duration-200 ease-out"
+          />
+        )}
+        <NumberFlow
+          prefix=":"
+          trend={-1}
+          value={timeRemaining % 60}
+          digits={{ 1: { max: 5 } }}
+          format={{ minimumIntegerDigits: 2 }}
+          className="transition-colors duration-200 ease-out"
+        />
+        <span className="ml-1 text-[10px] font-semibold">
+          {timerPaused ? "⏸" : ""}
+        </span>
+      </button>
+    </NumberFlowGroup>
+  );
+
   return (
     <div className="flex flex-col h-screen justify-between pb-3 box-border">
-      {!isStopped && (
+      {!isStopped && inactivityTimeoutEnabled && hasStartedTyping && (
         <InactivityWarning inactivitySeconds={inactivitySeconds} />
       )}
-      <div
-        className="flex flex-col md:flex-row gap-4 relative mt-2  mx-auto w-full h-[90%] data-[open=true]:gap-2 flex-1"
-        data-open={open}
-      >
-        <div className="ml-20 w-full">
-          <div className="flex flex-col grow">
-            <Textarea
-              ref={textareaRef}
-              value={currentText}
-              onChange={handleTextChange}
-              placeholder="Start writing here..."
-              className={`min-h-[400px] grow resize-none border-none outline-none shadow-none! ${getFontClass(fontStyle)} w-full transition-all duration-200 delay-100 ease-out`}
-              focus={false}
-              disabled={isStopped}
+      <div className="flex flex-col md:flex-row gap-4 relative mt-2 mx-auto w-full h-[90%]flex-1">
+        <div className="mx-20 w-full">
+          <div className="flex flex-col grow gap-2">
+            <PromptPopover prompt={prompt} setPrompt={setPrompt} />
+            <WritingArea
+              currentText={currentText}
+              setCurrentText={setCurrentText}
+              handleTextChange={handleTextChange}
+              fontStyle={fontStyle}
+              textareaRef={textareaRef}
+              isStopped={isStopped}
             />
           </div>
         </div>
-        <WordList words={requiredWords} text={currentText} open={open} />
       </div>
-
-      <div className="px-4 flex items-center justify-between flex-[0]">
-        <div className="flex items-center gap-2">
-          <NumberFlowGroup>
-            <div
-              style={
-                { fontVariantNumeric: "tabular-nums" } as React.CSSProperties
-              }
-              className="text-xs flex items-baseline group text-muted-foreground w-fit"
-            >
-              {timeRemaining >= 3600 && (
-                <NumberFlow
-                  trend={-1}
-                  value={Math.floor(timeRemaining / 3600)}
-                  format={{ minimumIntegerDigits: 2 }}
-                  className="group-hover:text-foreground transition-colors duration-200 ease-out"
-                />
-              )}
-              {timeRemaining >= 3600 && (
-                <NumberFlow
-                  prefix=":"
-                  trend={-1}
-                  value={Math.floor((timeRemaining % 3600) / 60)}
-                  digits={{ 1: { max: 5 } }}
-                  format={{ minimumIntegerDigits: 2 }}
-                  className="group-hover:text-foreground transition-colors duration-200 ease-out"
-                />
-              )}
-              {timeRemaining < 3600 && (
-                <NumberFlow
-                  trend={-1}
-                  value={Math.floor(timeRemaining / 60)}
-                  format={{ minimumIntegerDigits: 2 }}
-                  className="group-hover:text-foreground transition-colors duration-200 ease-out"
-                />
-              )}
-              <NumberFlow
-                prefix=":"
-                trend={-1}
-                value={timeRemaining % 60}
-                digits={{ 1: { max: 5 } }}
-                format={{ minimumIntegerDigits: 2 }}
-                className="group-hover:text-foreground transition-colors duration-200 ease-out"
-              />
-            </div>
-          </NumberFlowGroup>
-          <Select
-            value={fontStyle}
-            onValueChange={(value) => setFontStyle(value as FontStyle)}
-            disabled={isStopped}
-          >
-            <SelectTrigger className="w-fit h-5 rounded-sm px-1 border-none shadow-none text-xs text-muted-foreground">
-              <SelectValue placeholder="Font style" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="sans" className="text-sm">
-                Sans-serif
-              </SelectItem>
-              <SelectItem value="serif" className="text-sm">
-                Serif
-              </SelectItem>
-              <SelectItem value="mono" className="text-sm">
-                Monospace
-              </SelectItem>
-            </SelectContent>
-          </Select>
-          <Button
-            onClick={handleCopy}
-            variant={"ghost"}
-            size={"icon"}
-            className="hover:text-foreground text-muted-foreground size-5 p-0.5 rounded-sm"
-          >
-            <Copy className="!size-4" />
-          </Button>
-          <Button
-            onClick={handleDownload}
-            variant={"ghost"}
-            size={"icon"}
-            className="hover:text-foreground text-muted-foreground size-5 rounded-sm"
-          >
-            <DownloadIcon className="!size-4" />
-          </Button>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="text-xs text-muted-foreground">
-            {wordCount} words • {charCount} characters
-          </div>
-          <Button
-            variant={"ghost"}
-            size={"icon"}
-            className="hover:text-foreground text-muted-foreground size-5 p-0.5 rounded-sm"
-            onClick={() => {
-              const newState = !open;
-              setOpen(newState);
-              // Save to cookie
-              document.cookie = `sidebarOpen=${newState ? "true" : "false"}; path=/; max-age=31536000; SameSite=Strict`;
-            }}
-            disabled={isStopped}
-          >
-            <SidebarIcon className="size-4" />
-          </Button>
-        </div>
+      <div className="flex flex-col gap-2">
+        <WritingToolbar
+          fontStyle={fontStyle}
+          setFontStyle={setFontStyle}
+          isStopped={isStopped}
+          handleCopy={handleCopy}
+          handleDownload={handleDownload}
+          wordCount={wordCount}
+          charCount={charCount}
+          timerDisplay={timerDisplay}
+          inactivityTimeoutEnabled={inactivityTimeoutEnabled}
+          setInactivityTimeoutEnabled={setInactivityTimeoutEnabled}
+          timeRemaining={timeRemaining}
+          setTimeRemaining={setTimeRemaining}
+          timerOptions={timerOptions}
+          customTimer={customTimer}
+          setCustomTimer={setCustomTimer}
+        />
       </div>
-
-      {/* Stopped Writing Dialog */}
       <WritingCompleteDialog
         open={isStopped}
         onOpenChange={setIsStopped}
         text={currentText}
-        sessionId={sessionId}
       />
     </div>
   );

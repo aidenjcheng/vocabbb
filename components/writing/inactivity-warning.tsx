@@ -22,12 +22,12 @@ export default function InactivityWarning({
           opacity: getInactivityWarningOpacity(),
         }}
       />
-      {/* <div
+      <div
         className="fixed inset-0  pointer-events-none z-30 transition-opacity duration-100  "
         style={{
           opacity: getInactivityWarningOpacity(),
         }}
-      /> */}
+      />
     </div>
   );
 }

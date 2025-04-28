@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -13,37 +12,25 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 
 interface WritingCompleteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   text: string;
-  sessionId: string;
 }
 
 export default function WritingCompleteDialog({
   open,
   onOpenChange,
   text,
-  sessionId,
 }: WritingCompleteDialogProps) {
   const [dialogCopied, setDialogCopied] = useState(false);
-  const router = useRouter();
 
   const handleDialogCopy = async () => {
     await navigator.clipboard.writeText(text);
     setDialogCopied(true);
     toast.success("Text copied to clipboard");
     setTimeout(() => setDialogCopied(false), 2000);
-  };
-
-  const handleViewAnalysis = () => {
-    router.push(`/analysis/${sessionId}`);
-  };
-
-  const handleNewChallenge = () => {
-    router.push("/start");
   };
 
   return (
@@ -75,22 +62,12 @@ export default function WritingCompleteDialog({
                 {dialogCopied ? <Check /> : <Copy />}
               </Button>
             </div>
-
             <AlertDialogFooter className="flex flex-col sm:flex-row gap-3 pb-4 sm:!justify-between">
               <AlertDialogAction asChild>
-                <Button onClick={handleViewAnalysis} className="w-fit">
-                  View analysis
+                <Button onClick={() => onOpenChange(false)} className="w-fit">
+                  Close
                 </Button>
               </AlertDialogAction>
-              <AlertDialogCancel asChild>
-                <Button
-                  onClick={handleNewChallenge}
-                  variant="outline"
-                  className="w-fit"
-                >
-                  Start new challenge
-                </Button>
-              </AlertDialogCancel>
             </AlertDialogFooter>
           </div>
         </div>
